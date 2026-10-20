@@ -296,8 +296,8 @@ private fun PracticeCard(title: String, caption: String, icon: ImageVector, onCl
     onClick = onClick,
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     shape = MaterialTheme.shapes.large,
-    border = BorderStroke(1.dp, glassBorderBrush()),
-    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth(),
   ) {
     Row(Modifier.padding(20.dp).background(MaterialTheme.colorScheme.surface), verticalAlignment = Alignment.CenterVertically) {
@@ -341,8 +341,8 @@ fun ReviewScreen(ui: StudyUiState, onStart: () -> Unit) {
         Card(
           colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
           shape = MaterialTheme.shapes.large,
-          border = BorderStroke(1.dp, glassBorderBrush()),
-          elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+          border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+          elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
           modifier = Modifier.fillMaxWidth(),
         ) {
           Column(Modifier.padding(22.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -356,8 +356,8 @@ fun ReviewScreen(ui: StudyUiState, onStart: () -> Unit) {
         Card(
           colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
           shape = MaterialTheme.shapes.medium,
-          border = BorderStroke(1.dp, glassBorderBrush()),
-          elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+          border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+          elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
           modifier = Modifier.fillMaxWidth(),
         ) {
           Row(Modifier.padding(16.dp).background(MaterialTheme.colorScheme.surface), verticalAlignment = Alignment.CenterVertically) {

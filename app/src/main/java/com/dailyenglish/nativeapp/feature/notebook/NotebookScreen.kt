@@ -136,8 +136,8 @@ private fun WordSection(
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     shape = MaterialTheme.shapes.large,
-    border = BorderStroke(1.dp, glassBorderBrush()),
-    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = modifier,
   ) {
     Column(Modifier.padding(18.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -200,8 +200,8 @@ private fun SentenceSection(
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     shape = MaterialTheme.shapes.large,
-    border = BorderStroke(1.dp, glassBorderBrush()),
-    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = modifier,
   ) {
     Column(Modifier.padding(18.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -260,8 +260,8 @@ private fun EmptyNotebook(tab: String) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     shape = MaterialTheme.shapes.large,
-    border = BorderStroke(1.dp, glassBorderBrush()),
-    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth(),
   ) {
     Column(Modifier.padding(22.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(6.dp)) {

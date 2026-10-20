@@ -90,8 +90,8 @@ fun SentencesScreen(
       Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = MaterialTheme.shapes.extraLarge,
-        border = BorderStroke(1.dp, glassBorderBrush()),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier.fillMaxWidth(),
       ) {
         Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {

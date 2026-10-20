@@ -121,8 +121,8 @@ private fun StatCard(item: StatItem, modifier: Modifier) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     shape = MaterialTheme.shapes.large,
-    border = BorderStroke(1.dp, glassBorderBrush()),
-    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = modifier,
   ) {
     Column(Modifier.padding(16.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -141,8 +141,8 @@ private fun WeekPanel(week: List<WeekSlice>, modifier: Modifier) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     shape = MaterialTheme.shapes.large,
-    border = BorderStroke(1.dp, glassBorderBrush()),
-    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = modifier,
   ) {
     Column(Modifier.padding(18.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -182,8 +182,8 @@ private fun MasteryPanel(stats: Statistics, examLabel: String, modifier: Modifie
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     shape = MaterialTheme.shapes.large,
-    border = BorderStroke(1.dp, glassBorderBrush()),
-    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = modifier,
   ) {
     Column(Modifier.padding(18.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -221,8 +221,8 @@ private fun HeatmapPanel(heatmap: List<HeatCell>) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     shape = MaterialTheme.shapes.large,
-    border = BorderStroke(1.dp, glassBorderBrush()),
-    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth(),
   ) {
     Column(Modifier.padding(18.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(10.dp)) {
