@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '21'
+  ANDROID_PLATFORM: '36'
+
+jobs:
+  android:
+    name: Android · Liquid Glass
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Ensure Android platform
+        run: |
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          if [ ! -d "$SDK/platforms/android-$ANDROID_PLATFORM" ]; then
+            "$SDK/cmdline-tools/latest/bin/sdkmanager" "platforms;android-$ANDROID_PLATFORM"
+          fi
+          ls "$SDK/platforms"
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-liquidglass-v1-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/build.gradle.kts') }}
+          restore-keys: |
+            gradle-liquidglass-v1-${{ runner.os }}-
+
+      - name: Unit tests and debug build
+        run: |
+          set -o pipefail
+          ./gradlew testDebugUnitTest assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
+
+      - name: Surface Gradle failure
+        if: failure()
+        run: |
+          {
+            echo "### Android build failure"
+            echo '```'
+            tail -n 200 build.log 2>/dev/null || echo "build.log missing"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("build.log")
+          lines = p.read_text(errors="replace").splitlines() if p.exists() else ["build.log missing"]
+          start = next((i for i, line in enumerate(lines)
+                        if "FAILURE: Build failed" in line or "What went wrong:" in line), None)
+          if start is None:
+              start = max(0, len(lines) - 160)
+          text = "\n".join(lines[start:start + 120])
+          text = text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=Gradle failure::{text}")
+          PY
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-report
+          path: |
+            app/build/reports/tests
+            app/build/test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk-no-api
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

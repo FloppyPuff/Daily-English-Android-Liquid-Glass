@@ -1,0 +1,181 @@
+name: Android Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: 'API origin baked into the APK, e.g. https://host:8443/'
+        required: true
+        type: string
+      publish_release:
+        description: 'Attach the APK to a GitHub Release'
+        type: boolean
+        default: true
+  push:
+    tags:
+      - 'android-v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  JAVA_VERSION: '21'
+  ANDROID_PLATFORM: '36'
+
+jobs:
+  build:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Ensure Android platform
+        run: |
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          if [ ! -d "$SDK/platforms/android-$ANDROID_PLATFORM" ]; then
+            "$SDK/cmdline-tools/latest/bin/sdkmanager" "platforms;android-$ANDROID_PLATFORM"
+          fi
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-liquidglass-release-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', '**/build.gradle.kts') }}
+          restore-keys: |
+            gradle-liquidglass-release-${{ runner.os }}-
+
+      - name: Resolve the API origin
+        id: api
+        env:
+          INPUT_URL: ${{ inputs.api_base_url }}
+          VAR_URL: ${{ vars.ANDROID_API_BASE_URL }}
+        run: |
+          set -euo pipefail
+          url="${INPUT_URL:-$VAR_URL}"
+          if [ -z "$url" ]; then
+            echo "::error::no API origin: pass api_base_url or set the ANDROID_API_BASE_URL variable"
+            exit 1
+          fi
+          case "$url" in
+            */) ;;
+            *) echo "::error::the API origin must end with a slash: $url"; exit 1 ;;
+          esac
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Decode signing keystore
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set; building an unsigned APK"
+            echo "signed=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          chmod 600 "$RUNNER_TEMP/release.jks"
+          echo "signed=1" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        env:
+          API_URL: ${{ steps.api.outputs.url }}
+          SIGNED: ${{ steps.keystore.outputs.signed }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          args=(assembleRelease --no-daemon --stacktrace "-PapiBaseUrl=$API_URL")
+          if [ "$SIGNED" = 1 ]; then
+            for required in KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+              if [ -z "${!required}" ]; then
+                echo "::error::$required is required once ANDROID_KEYSTORE_BASE64 is set"
+                exit 1
+              fi
+            done
+            args+=("-PkeystoreFile=$RUNNER_TEMP/release.jks"
+                   "-PkeystorePassword=$KEYSTORE_PASSWORD"
+                   "-PkeyAlias=$KEY_ALIAS"
+                   "-PkeyPassword=$KEY_PASSWORD")
+            trap 'shred -u "$RUNNER_TEMP/release.jks" 2>/dev/null || rm -f "$RUNNER_TEMP/release.jks"' EXIT
+          fi
+          ./gradlew "${args[@]}"
+
+      - name: Collect and name the APK
+        id: apk
+        run: |
+          set -euo pipefail
+          version=$(grep -o 'versionName = "[^"]*"' app/build.gradle.kts | head -1 | cut -d'"' -f2)
+          if [ -f app/build/outputs/apk/release/app-release.apk ]; then
+            source_apk=app/build/outputs/apk/release/app-release.apk
+            kind=release
+          else
+            source_apk=app/build/outputs/apk/release/app-release-unsigned.apk
+            kind=unsigned
+          fi
+          [ -f "$source_apk" ] || { echo "::error::no APK was produced"; exit 1; }
+          name="Daily-English-Liquid-Glass-$version-$kind.apk"
+          mkdir -p out
+          cp "$source_apk" "out/$name"
+          ( cd out && sha256sum "$name" > "$name.sha256" )
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          ls -lh out
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.apk.outputs.name }}
+          path: |
+            out/${{ steps.apk.outputs.name }}
+            out/${{ steps.apk.outputs.name }}.sha256
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish GitHub Release
+        if: github.event_name == 'push' || inputs.publish_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.apk.outputs.name }}
+          VERSION: ${{ steps.apk.outputs.version }}
+          KIND: ${{ steps.apk.outputs.kind }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          case "$tag" in
+            android-v*) ;;
+            *) tag="android-v$VERSION" ;;
+          esac
+          if [ "$KIND" = unsigned ]; then
+            signing_note='This APK is **unsigned**. Sign it with your own key before installing, or add the `ANDROID_KEYSTORE_*` secrets and run this workflow again.'
+          else
+            signing_note='Signed with the Daily English Liquid Glass release key.'
+          fi
+          notes="Android build $VERSION ($KIND).
+
+          - Commit: \`$GITHUB_SHA\`
+          - $signing_note"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" "out/$NAME" "out/$NAME.sha256" --clobber
+          else
+            gh release create "$tag" "out/$NAME" "out/$NAME.sha256" \
+              --target "$GITHUB_SHA" --title "Daily English Liquid Glass $VERSION" --notes "$notes"
+          fi
+          echo "== published to release $tag"
