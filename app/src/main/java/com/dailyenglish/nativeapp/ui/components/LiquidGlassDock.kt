@@ -73,11 +73,14 @@ data class LiquidTabItem(
 // Proportions follow the reference: the bar is a slim ~1:7 capsule and the
 // floating lens is a wider-than-tall oval roughly 1.2x the bar height.
 private val BarHeight = 48.dp
-private val BubbleHeight = 58.dp
+// Resting capsule is inset inside the bar; it only grows past the bar while
+// pressed or dragged (PressedScale x BubbleHeight).
+private val BubbleHeight = 40.dp
+private val DockHeight = 58.dp
 private val TabInset = 4.dp
 private val BubbleGap = 6.dp
 private val IconSize = 20.dp
-private const val PressedScale = 1.12f
+private const val PressedScale = 1.45f
 
 /**
  * Floating liquid-glass dock built from three stacked glass layers:
@@ -167,7 +170,7 @@ fun LiquidGlassDock(
   BoxWithConstraints(
     modifier = modifier
       .fillMaxWidth()
-      .height(BubbleHeight),
+      .height(DockHeight),
     contentAlignment = Alignment.Center,
   ) {
     val density = LocalDensity.current
@@ -243,7 +246,7 @@ fun LiquidGlassDock(
           onDrawSurface = { drawRect(containerColor) },
         )
         .then(glow)
-        .height(BubbleHeight)
+        .height(DockHeight)
         .fillMaxWidth()
         .graphicsLayer { colorFilter = ColorFilter.tint(accent) },
     ) {
@@ -273,10 +276,10 @@ fun LiquidGlassDock(
               chromaticAberration = true,
             )
           },
-          highlight = { Highlight.Default.copy(alpha = 0.5f + 0.5f * progress) },
-          shadow = { Shadow.Default.copy(alpha = 0.28f + 0.42f * progress) },
+          highlight = { Highlight.Default.copy(alpha = 0.42f + 0.58f * progress) },
+          shadow = { Shadow.Default.copy(alpha = 0.16f + 0.44f * progress) },
           innerShadow = {
-            InnerShadow.Default.copy(radius = 12.dp, alpha = 0.10f + 0.30f * progress)
+            InnerShadow.Default.copy(radius = 12.dp, alpha = 0.08f + 0.32f * progress)
           },
           layerBlock = {
             var sx = pressScaleX.value
