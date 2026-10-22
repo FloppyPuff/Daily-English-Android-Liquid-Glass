@@ -1,15 +1,13 @@
 package com.dailyenglish.nativeapp.ui.components
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.AnimationVector2D
+import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -33,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +46,11 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -62,6 +66,7 @@ import com.kyant.backdrop.shadow.Shadow
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 private val GlassButtonSize = 44.dp
@@ -103,8 +108,55 @@ private fun glassTint(): Color {
 }
 
 /**
- * Circular glass action. While pressed it stretches outwards from the touch
- * point, so the press reads as pulling the glass around.
+ * Press + drag gesture for glass buttons. Dragging pulls the button towards
+ * the finger (damped) and stretches it along the drag axis; releasing springs
+ * it back. A release before touch slop counts as a tap.
+ */
+@Composable
+private fun rememberGlassPress(
+  scope: CoroutineScope,
+  press: Animatable<Float, AnimationVector1D>,
+  drag: Animatable<Offset, AnimationVector2D>,
+  onOrigin: (Offset) -> Unit,
+  onClick: () -> Unit,
+): Modifier {
+  val click by rememberUpdatedState(onClick)
+  val origin by rememberUpdatedState(onOrigin)
+  return Modifier.pointerInput(Unit) {
+    awaitEachGesture {
+      val down = awaitFirstDown(requireUnconsumed = false)
+      down.consume()
+      origin(down.position)
+      scope.launch {
+        drag.snapTo(Offset.Zero)
+        press.animateTo(1f, spring(dampingRatio = 1f, stiffness = 1000f))
+      }
+      var total = Offset.Zero
+      var dragging = false
+      var change = down
+      while (change.pressed) {
+        val event = awaitPointerEvent(PointerEventPass.Main)
+        change = event.changes.firstOrNull { it.id == down.id } ?: break
+        if (!change.pressed) break
+        val delta = change.position - change.previousPosition
+        total += delta
+        if (!dragging && total.getDistance() > viewConfiguration.touchSlop) dragging = true
+        if (dragging) {
+          change.consume()
+          scope.launch { drag.snapTo(drag.value + delta) }
+        }
+      }
+      if (!dragging) click()
+      scope.launch { drag.animateTo(Offset.Zero, spring(dampingRatio = 0.55f, stiffness = 320f)) }
+      scope.launch { press.animateTo(0f, spring(dampingRatio = 1f, stiffness = 1000f)) }
+    }
+  }
+}
+
+/**
+ * Circular glass action. Pressing stretches it outwards from the touch point;
+ * dragging pulls it along the finger with a directional squash, then it
+ * springs back on release.
  */
 @Composable
 fun LiquidGlassCircleButton(
@@ -115,46 +167,61 @@ fun LiquidGlassCircleButton(
   size: Dp = GlassButtonSize,
 ) {
   val backdrop = LocalGlassBackdrop.current
-  val interaction = remember { MutableInteractionSource() }
-  val pressed by interaction.collectIsPressedAsState()
-  val press by animateFloatAsState(
-    targetValue = if (pressed) 1f else 0f,
-    animationSpec = spring(dampingRatio = 0.5f, stiffness = 520f),
-    label = "glass-button-press",
-  )
-  var pressPoint by remember { mutableStateOf(Offset.Unspecified) }
+  val scope = rememberCoroutineScope()
+  val press = remember { Animatable(0f) }
+  val drag = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+  var origin by remember { mutableStateOf(Offset.Unspecified) }
   var boxSize by remember { mutableStateOf(IntSize.Zero) }
-  LaunchedEffect(interaction) {
-    interaction.interactions.collect { event ->
-      if (event is PressInteraction.Press) pressPoint = event.pressPosition
-    }
-  }
+  val p = press.value
+
   Box(
     modifier = modifier
       .size(size)
       .onSizeChanged { boxSize = it }
       .graphicsLayer {
-        val ox = if (pressPoint.isSpecified && boxSize.width > 0) {
-          (pressPoint.x / boxSize.width).coerceIn(0f, 1f)
+        val ox = if (origin.isSpecified && boxSize.width > 0) {
+          (origin.x / boxSize.width).coerceIn(0f, 1f)
         } else {
           0.5f
         }
-        val oy = if (pressPoint.isSpecified && boxSize.height > 0) {
-          (pressPoint.y / boxSize.height).coerceIn(0f, 1f)
+        val oy = if (origin.isSpecified && boxSize.height > 0) {
+          (origin.y / boxSize.height).coerceIn(0f, 1f)
         } else {
           0.5f
         }
         transformOrigin = TransformOrigin(ox, oy)
-        scaleX = 1f + 0.07f * press
-        scaleY = 1f + 0.04f * press
+        val d = drag.value
+        translationX = d.x * 0.3f
+        translationY = d.y * 0.3f
+        val dxN = (d.x / boxSize.width.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
+        val dyN = (d.y / boxSize.height.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
+        scaleX = (1f + 0.06f * p) * (1f + abs(dxN) * 0.45f - abs(dyN) * 0.15f)
+        scaleY = (1f + 0.04f * p) * (1f + abs(dyN) * 0.45f - abs(dxN) * 0.15f)
+        rotationZ = dxN * -3f
       }
-      .glassCapsule(backdrop, CircleShape, glassTint(), press)
-      .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+      .glassCapsule(backdrop, CircleShape, glassTint(), p)
+      .then(
+        rememberGlassPress(
+          scope = scope,
+          press = press,
+          drag = drag,
+          onOrigin = { origin = it },
+          onClick = onClick,
+        ),
+      )
+      .semantics {
+        role = Role.Button
+        if (contentDescription != null) this.contentDescription = contentDescription
+        this.onClick {
+          onClick()
+          true
+        }
+      },
     contentAlignment = Alignment.Center,
   ) {
     Icon(
       icon,
-      contentDescription = contentDescription,
+      contentDescription = null,
       tint = MaterialTheme.colorScheme.onSurface,
       modifier = Modifier.size(20.dp),
     )
@@ -170,40 +237,54 @@ fun LiquidGlassPillButton(
   content: @Composable RowScope.() -> Unit,
 ) {
   val backdrop = LocalGlassBackdrop.current
-  val interaction = remember { MutableInteractionSource() }
-  val pressed by interaction.collectIsPressedAsState()
-  val press by animateFloatAsState(
-    targetValue = if (pressed) 1f else 0f,
-    animationSpec = spring(dampingRatio = 0.5f, stiffness = 520f),
-    label = "glass-pill-press",
-  )
-  var pressPoint by remember { mutableStateOf(Offset.Unspecified) }
+  val scope = rememberCoroutineScope()
+  val press = remember { Animatable(0f) }
+  val drag = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+  var origin by remember { mutableStateOf(Offset.Unspecified) }
   var boxSize by remember { mutableStateOf(IntSize.Zero) }
-  LaunchedEffect(interaction) {
-    interaction.interactions.collect { event ->
-      if (event is PressInteraction.Press) pressPoint = event.pressPosition
-    }
-  }
+  val p = press.value
+
   Row(
     modifier = modifier
       .onSizeChanged { boxSize = it }
       .graphicsLayer {
-        val ox = if (pressPoint.isSpecified && boxSize.width > 0) {
-          (pressPoint.x / boxSize.width).coerceIn(0f, 1f)
+        val ox = if (origin.isSpecified && boxSize.width > 0) {
+          (origin.x / boxSize.width).coerceIn(0f, 1f)
         } else {
           0.5f
         }
-        val oy = if (pressPoint.isSpecified && boxSize.height > 0) {
-          (pressPoint.y / boxSize.height).coerceIn(0f, 1f)
+        val oy = if (origin.isSpecified && boxSize.height > 0) {
+          (origin.y / boxSize.height).coerceIn(0f, 1f)
         } else {
           0.5f
         }
         transformOrigin = TransformOrigin(ox, oy)
-        scaleX = 1f + 0.06f * press
-        scaleY = 1f + 0.03f * press
+        val d = drag.value
+        translationX = d.x * 0.3f
+        translationY = d.y * 0.3f
+        val dxN = (d.x / boxSize.width.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
+        val dyN = (d.y / boxSize.height.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
+        scaleX = (1f + 0.05f * p) * (1f + abs(dxN) * 0.45f - abs(dyN) * 0.15f)
+        scaleY = (1f + 0.03f * p) * (1f + abs(dyN) * 0.45f - abs(dxN) * 0.15f)
+        rotationZ = dxN * -2f
       }
-      .glassCapsule(backdrop, CircleShape, glassTint(), press)
-      .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+      .glassCapsule(backdrop, CircleShape, glassTint(), p)
+      .then(
+        rememberGlassPress(
+          scope = scope,
+          press = press,
+          drag = drag,
+          onOrigin = { origin = it },
+          onClick = onClick,
+        ),
+      )
+      .semantics {
+        role = Role.Button
+        this.onClick {
+          onClick()
+          true
+        }
+      }
       .padding(contentPadding),
     verticalAlignment = Alignment.CenterVertically,
     content = content,
@@ -212,7 +293,9 @@ fun LiquidGlassPillButton(
 
 /**
  * Liquid glass segmented switch shaped like the dock: a glass capsule with a
- * floating lens chip that follows taps and horizontal drags.
+ * floating lens chip that follows taps and horizontal drags. Like the dock,
+ * the chip is inset at rest and grows 1.45x, overflowing the bar, only while
+ * pressed or dragged.
  */
 @Composable
 fun LiquidGlassSegmented(
@@ -269,7 +352,7 @@ fun LiquidGlassSegmented(
         .align(Alignment.CenterStart)
         .graphicsLayer {
           translationX = insetPx + 2.dp.toPx() + position.value * tabWidthPx
-          val scale = 1f + 0.05f * p
+          val scale = 1f + 0.45f * p
           scaleX = scale
           scaleY = scale
         }
