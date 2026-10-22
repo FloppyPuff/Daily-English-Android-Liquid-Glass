@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -72,8 +71,9 @@ data class LiquidTabItem(
 )
 
 private val BarHeight = 70.dp
+private val BubbleHeight = 84.dp
 private val TabInset = 4.dp
-private val BubbleCorner = 26.dp
+private val BubbleGap = 8.dp
 private const val PressedScale = 1.12f
 
 /**
@@ -164,7 +164,7 @@ fun LiquidGlassDock(
   BoxWithConstraints(
     modifier = modifier
       .fillMaxWidth()
-      .height(BarHeight),
+      .height(BubbleHeight),
     contentAlignment = Alignment.Center,
   ) {
     val density = LocalDensity.current
@@ -174,13 +174,11 @@ fun LiquidGlassDock(
     val progress = pressProgress.value
     val positionValue = position.value
 
-    // Edge tabs absorb the bar's rounded cap so the indicator fills the whole
-    // button slot; middle tabs stay exactly one tab wide.
-    val startGrow = 1f - positionValue.coerceIn(0f, 1f)
-    val endGrow = 1f - (lastIndex - positionValue).coerceIn(0f, 1f)
-    val bubbleLeftPx = tabInsetPx + positionValue * tabWidthPx - tabInsetPx * startGrow
-    val bubbleWidthPx = tabWidthPx + tabInsetPx * startGrow + tabInsetPx * endGrow
-    val bubbleWidth = with(density) { bubbleWidthPx.toDp() }
+    // The capsule floats inside its slot with a visible gap on every side and
+    // overflows the bar vertically, so it reads as a detached glass lens.
+    val bubbleGapPx = with(density) { BubbleGap.toPx() }
+    val bubbleWidth = tabWidth - BubbleGap
+    val bubbleLeftPx = tabInsetPx + positionValue * tabWidthPx + bubbleGapPx / 2f
 
     // Soft white bloom that follows the capsule while pressed or dragged.
     val glow = Modifier.drawWithContent {
@@ -242,7 +240,7 @@ fun LiquidGlassDock(
           onDrawSurface = { drawRect(containerColor) },
         )
         .then(glow)
-        .height(BarHeight)
+        .height(BubbleHeight)
         .fillMaxWidth()
         .graphicsLayer { colorFilter = ColorFilter.tint(accent) },
     ) {
@@ -256,53 +254,47 @@ fun LiquidGlassDock(
       )
     }
 
-    // 3. moving liquid lens capsule, clipped to the bar outline so its corners
-    // never poke outside the capsule.
+    // 3. floating liquid lens capsule: one slot minus a gap on each side and
+    // taller than the bar, so it hovers above the surface and may overflow it.
     Box(
       Modifier
-        .align(Alignment.Center)
-        .height(BarHeight)
-        .fillMaxWidth()
-        .clip(CircleShape),
-    ) {
-      Box(
-        Modifier
-          .align(Alignment.CenterStart)
-          .graphicsLayer { translationX = bubbleLeftPx }
-          .drawBackdrop(
-            backdrop = combinedBackdrop,
-            shape = { RoundedCornerShape(BubbleCorner) },
-            effects = {
-              lens(
-                10.dp.toPx() * progress,
-                14.dp.toPx() * progress,
-                chromaticAberration = true,
-              )
-            },
-            highlight = { Highlight.Default.copy(alpha = progress) },
-            shadow = { Shadow.Default.copy(alpha = progress * 0.6f) },
-            innerShadow = { InnerShadow.Default.copy(radius = 8.dp * progress, alpha = progress) },
-            layerBlock = {
-              var sx = pressScaleX.value
-              var sy = pressScaleY.value
-              val v = velocity.value / 10f
-              sx /= 1f - (v * 0.75f).coerceIn(-0.2f, 0.2f)
-              sy *= 1f - (v * 0.25f).coerceIn(-0.2f, 0.2f)
-              scaleX = sx
-              scaleY = sy
-            },
-            onDrawSurface = {
-              drawRect(
-                if (dark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.10f),
-                alpha = 1f - progress,
-              )
-              drawRect(Color.Black.copy(alpha = 0.03f * progress))
-            },
-          )
-          .height(BarHeight)
-          .width(bubbleWidth),
-      )
-    }
+        .align(Alignment.CenterStart)
+        .graphicsLayer { translationX = bubbleLeftPx }
+        .drawBackdrop(
+          backdrop = combinedBackdrop,
+          shape = { RoundedCornerShape(percent = 50) },
+          effects = {
+            lens(
+              10.dp.toPx() * progress,
+              14.dp.toPx() * progress,
+              chromaticAberration = true,
+            )
+          },
+          highlight = { Highlight.Default.copy(alpha = 0.5f + 0.5f * progress) },
+          shadow = { Shadow.Default.copy(alpha = 0.28f + 0.42f * progress) },
+          innerShadow = {
+            InnerShadow.Default.copy(radius = 12.dp, alpha = 0.10f + 0.30f * progress)
+          },
+          layerBlock = {
+            var sx = pressScaleX.value
+            var sy = pressScaleY.value
+            val v = velocity.value / 10f
+            sx /= 1f - (v * 0.75f).coerceIn(-0.2f, 0.2f)
+            sy *= 1f - (v * 0.25f).coerceIn(-0.2f, 0.2f)
+            scaleX = sx
+            scaleY = sy
+          },
+          onDrawSurface = {
+            drawRect(
+              if (dark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.08f),
+              alpha = 1f - progress,
+            )
+            drawRect(Color.Black.copy(alpha = 0.03f * progress))
+          },
+        )
+        .height(BubbleHeight)
+        .width(bubbleWidth),
+    )
 
     // 4. icon row: pure visuals; slots fade out as the capsule covers them.
     Row(

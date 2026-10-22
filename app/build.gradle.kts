@@ -38,8 +38,8 @@ android {
     applicationId = "com.dailyenglish.liquidglass"
     minSdk = 33
     targetSdk = 36
-    versionCode = 7
-    versionName = "1.2.4-liquidglass"
+    versionCode = 8
+    versionName = "1.2.5-liquidglass"
     buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
   }
 
