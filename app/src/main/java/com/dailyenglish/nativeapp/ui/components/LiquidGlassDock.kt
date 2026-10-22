@@ -72,14 +72,14 @@ data class LiquidTabItem(
 
 // Proportions follow the reference: the bar is a slim ~1:7 capsule and the
 // floating lens is a wider-than-tall oval roughly 1.2x the bar height.
-private val BarHeight = 48.dp
+private val BarHeight = 58.dp
 // Resting capsule is inset inside the bar; it only grows past the bar while
 // pressed or dragged (PressedScale x BubbleHeight).
-private val BubbleHeight = 40.dp
-private val DockHeight = 58.dp
+private val BubbleHeight = 50.dp
+private val DockHeight = 74.dp
 private val TabInset = 4.dp
 private val BubbleGap = 6.dp
-private val IconSize = 20.dp
+private val IconSize = 22.dp
 private const val PressedScale = 1.45f
 
 /**
@@ -408,12 +408,12 @@ private fun DockTabs(
           tint = color,
           modifier = Modifier.size(IconSize),
         )
-        Spacer(Modifier.height(1.dp))
+        Spacer(Modifier.height(2.dp))
         Text(
           tab.label,
           style = MaterialTheme.typography.labelSmall.copy(
-            fontSize = 10.sp,
-            lineHeight = 12.sp,
+            fontSize = 11.sp,
+            lineHeight = 14.sp,
             letterSpacing = 0.sp,
           ),
           color = color,

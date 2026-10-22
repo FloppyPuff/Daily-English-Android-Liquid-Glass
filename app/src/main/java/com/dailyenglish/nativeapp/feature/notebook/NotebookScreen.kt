@@ -61,7 +61,7 @@ fun NotebookScreen(
     return
   }
   Column(
-    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 100.dp),
+    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 112.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
   ) {
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
