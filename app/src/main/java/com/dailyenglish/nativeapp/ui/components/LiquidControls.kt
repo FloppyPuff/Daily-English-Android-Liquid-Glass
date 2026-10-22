@@ -54,6 +54,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.dailyenglish.nativeapp.theme.LocalGlassBackdrop
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
@@ -105,6 +106,13 @@ private fun Modifier.glassCapsule(
 private fun glassTint(): Color {
   val dark = isSystemInDarkTheme()
   return if (dark) Color.White.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.42f)
+}
+
+/** Same container tint the dock bar uses, so switches read as one family. */
+@Composable
+private fun dockContainerColor(): Color {
+  val dark = isSystemInDarkTheme()
+  return if (dark) Color(0xFF121212).copy(alpha = 0.42f) else Color(0xFFFAFAFA).copy(alpha = 0.42f)
 }
 
 /**
@@ -177,6 +185,7 @@ fun LiquidGlassCircleButton(
   Box(
     modifier = modifier
       .size(size)
+      .zIndex(if (p > 0.01f) 1f else 0f)
       .onSizeChanged { boxSize = it }
       .graphicsLayer {
         val ox = if (origin.isSpecified && boxSize.width > 0) {
@@ -191,8 +200,9 @@ fun LiquidGlassCircleButton(
         }
         transformOrigin = TransformOrigin(ox, oy)
         val d = drag.value
-        translationX = d.x * 0.3f
-        translationY = d.y * 0.3f
+        val maxShift = 4.dp.toPx()
+        translationX = (d.x * 0.15f).coerceIn(-maxShift, maxShift)
+        translationY = (d.y * 0.15f).coerceIn(-maxShift, maxShift)
         val dxN = (d.x / boxSize.width.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
         val dyN = (d.y / boxSize.height.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
         scaleX = (1f + 0.06f * p) * (1f + abs(dxN) * 0.45f - abs(dyN) * 0.15f)
@@ -246,6 +256,7 @@ fun LiquidGlassPillButton(
 
   Row(
     modifier = modifier
+      .zIndex(if (p > 0.01f) 1f else 0f)
       .onSizeChanged { boxSize = it }
       .graphicsLayer {
         val ox = if (origin.isSpecified && boxSize.width > 0) {
@@ -260,8 +271,9 @@ fun LiquidGlassPillButton(
         }
         transformOrigin = TransformOrigin(ox, oy)
         val d = drag.value
-        translationX = d.x * 0.3f
-        translationY = d.y * 0.3f
+        val maxShift = 4.dp.toPx()
+        translationX = (d.x * 0.15f).coerceIn(-maxShift, maxShift)
+        translationY = (d.y * 0.15f).coerceIn(-maxShift, maxShift)
         val dxN = (d.x / boxSize.width.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
         val dyN = (d.y / boxSize.height.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
         scaleX = (1f + 0.05f * p) * (1f + abs(dxN) * 0.45f - abs(dyN) * 0.15f)
@@ -340,11 +352,28 @@ fun LiquidGlassSegmented(
     val tabWidth = (maxWidth - SegmentInset * 2) / options.size
     val tabWidthPx = with(density) { tabWidth.toPx() }
     val p = press.value
+    val barColor = dockContainerColor()
 
     Box(
       Modifier
         .fillMaxSize()
-        .glassCapsule(backdrop, CircleShape, glassTint(), 0f, blurRadius = 10.dp, lensRadius = 16.dp),
+        .then(
+          if (backdrop == null) {
+            Modifier.background(barColor, CircleShape)
+          } else {
+            Modifier.drawBackdrop(
+              backdrop = backdrop,
+              shape = { CircleShape },
+              effects = {
+                vibrancy()
+                blur(8.dp.toPx())
+                lens(24.dp.toPx(), 24.dp.toPx())
+              },
+              highlight = { Highlight.Default },
+              onDrawSurface = { drawRect(barColor) },
+            )
+          },
+        ),
     )
 
     Box(
@@ -373,11 +402,11 @@ fun LiquidGlassSegmented(
                 )
               },
               highlight = { Highlight.Default.copy(alpha = 0.42f + 0.58f * p) },
-              shadow = { Shadow.Default.copy(alpha = 0.14f + 0.4f * p) },
-              innerShadow = { InnerShadow.Default.copy(radius = 10.dp, alpha = 0.08f + 0.24f * p) },
+              shadow = { Shadow.Default.copy(alpha = 0.16f + 0.44f * p) },
+              innerShadow = { InnerShadow.Default.copy(radius = 12.dp, alpha = 0.08f + 0.32f * p) },
               onDrawSurface = {
                 drawRect(
-                  if (dark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.09f),
+                  if (dark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.08f),
                   alpha = 1f - p,
                 )
                 drawRect(Color.Black.copy(alpha = 0.02f * p))
