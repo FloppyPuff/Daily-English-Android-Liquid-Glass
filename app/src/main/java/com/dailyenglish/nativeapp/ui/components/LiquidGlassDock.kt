@@ -3,7 +3,8 @@ package com.dailyenglish.nativeapp.ui.components
 import android.os.SystemClock
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,8 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -44,10 +43,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,6 +62,7 @@ import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
@@ -86,9 +86,10 @@ private const val PressedScale = 1.12f
  *     backdrop and drives its lens, highlight, shadows and velocity squash
  *     from the press/drag progress, so it stays liquid while sliding.
  *
- * The interactive icon row sits above the capsule and cross-fades each slot
- * out as the capsule covers it, which keeps a single crisp copy of every
- * label (the capsule shows the tinted twin copy instead).
+ * A single top gesture layer owns both taps and horizontal drags (whichever
+ * layer sits on top consumes the down event, so splitting them dead-ends one
+ * of the two). The icon row is pure visuals and cross-fades each slot out as
+ * the capsule covers it, keeping a single crisp label.
  */
 @Composable
 fun LiquidGlassDock(
@@ -173,6 +174,14 @@ fun LiquidGlassDock(
     val progress = pressProgress.value
     val positionValue = position.value
 
+    // Edge tabs absorb the bar's rounded cap so the indicator fills the whole
+    // button slot; middle tabs stay exactly one tab wide.
+    val startGrow = 1f - positionValue.coerceIn(0f, 1f)
+    val endGrow = 1f - (lastIndex - positionValue).coerceIn(0f, 1f)
+    val bubbleLeftPx = tabInsetPx + positionValue * tabWidthPx - tabInsetPx * startGrow
+    val bubbleWidthPx = tabWidthPx + tabInsetPx * startGrow + tabInsetPx * endGrow
+    val bubbleWidth = with(density) { bubbleWidthPx.toDp() }
+
     // Soft white bloom that follows the capsule while pressed or dragged.
     val glow = Modifier.drawWithContent {
       drawContent()
@@ -243,84 +252,59 @@ fun LiquidGlassDock(
         accent = accent,
         ink = ink,
         positionValue = positionValue,
-        interactive = false,
         applyFade = false,
-        onSelect = {},
       )
     }
 
-    // 3. moving liquid lens capsule, exactly one tab wide and bar tall. The
-    // rounded-rect shape fills the whole button slot instead of degenerating
-    // into an inscribed circle.
+    // 3. moving liquid lens capsule, clipped to the bar outline so its corners
+    // never poke outside the capsule.
     Box(
       Modifier
-        .align(Alignment.CenterStart)
-        .graphicsLayer { translationX = tabInsetPx + positionValue * tabWidthPx }
-        .drawBackdrop(
-          backdrop = combinedBackdrop,
-          shape = { RoundedCornerShape(BubbleCorner) },
-          effects = {
-            lens(
-              10.dp.toPx() * progress,
-              14.dp.toPx() * progress,
-              chromaticAberration = true,
-            )
-          },
-          highlight = { Highlight.Default.copy(alpha = progress) },
-          shadow = { Shadow.Default.copy(alpha = progress * 0.6f) },
-          innerShadow = { InnerShadow.Default.copy(radius = 8.dp * progress, alpha = progress) },
-          layerBlock = {
-            var sx = pressScaleX.value
-            var sy = pressScaleY.value
-            val v = velocity.value / 10f
-            sx /= 1f - (v * 0.75f).coerceIn(-0.2f, 0.2f)
-            sy *= 1f - (v * 0.25f).coerceIn(-0.2f, 0.2f)
-            scaleX = sx
-            scaleY = sy
-          },
-          onDrawSurface = {
-            drawRect(
-              if (dark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.10f),
-              alpha = 1f - progress,
-            )
-            drawRect(Color.Black.copy(alpha = 0.03f * progress))
-          },
-        )
+        .align(Alignment.Center)
         .height(BarHeight)
-        .width(tabWidth),
-    )
-
-    // 4. drag-to-switch layer. It sits below the icon row so taps reach the
-    // clickable tabs first, while unconsumed horizontal moves still drive it.
-    Box(
-      Modifier
-        .fillMaxSize()
-        .pointerInput(tabs.size, tabWidthPx, selectedIndex) {
-          detectHorizontalDragGestures(
-            onDragStart = {
-              velocityTracker.resetTracking()
-              press()
+        .fillMaxWidth()
+        .clip(CircleShape),
+    ) {
+      Box(
+        Modifier
+          .align(Alignment.CenterStart)
+          .graphicsLayer { translationX = bubbleLeftPx }
+          .drawBackdrop(
+            backdrop = combinedBackdrop,
+            shape = { RoundedCornerShape(BubbleCorner) },
+            effects = {
+              lens(
+                10.dp.toPx() * progress,
+                14.dp.toPx() * progress,
+                chromaticAberration = true,
+              )
             },
-            onHorizontalDrag = { change, dragAmount ->
-              change.consume()
-              val next = (position.value + dragAmount / tabWidthPx)
-                .coerceIn(0f, lastIndex.toFloat())
-              scope.launch { position.snapTo(next) }
-              velocityTracker.addPosition(change.uptimeMillis, Offset(next, 0f))
-              trackVelocity()
+            highlight = { Highlight.Default.copy(alpha = progress) },
+            shadow = { Shadow.Default.copy(alpha = progress * 0.6f) },
+            innerShadow = { InnerShadow.Default.copy(radius = 8.dp * progress, alpha = progress) },
+            layerBlock = {
+              var sx = pressScaleX.value
+              var sy = pressScaleY.value
+              val v = velocity.value / 10f
+              sx /= 1f - (v * 0.75f).coerceIn(-0.2f, 0.2f)
+              sy *= 1f - (v * 0.25f).coerceIn(-0.2f, 0.2f)
+              scaleX = sx
+              scaleY = sy
             },
-            onDragEnd = {
-              val target = position.value.roundToInt().coerceIn(0, lastIndex)
-              if (target != selectedIndex) onSelect(target) else glideTo(target.toFloat())
-            },
-            onDragCancel = {
-              glideTo(selectedIndex.coerceIn(0, lastIndex).toFloat())
+            onDrawSurface = {
+              drawRect(
+                if (dark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.10f),
+                alpha = 1f - progress,
+              )
+              drawRect(Color.Black.copy(alpha = 0.03f * progress))
             },
           )
-        },
-    )
+          .height(BarHeight)
+          .width(bubbleWidth),
+      )
+    }
 
-    // 5. interactive icon row on top; slots fade out as the capsule covers them.
+    // 4. icon row: pure visuals; slots fade out as the capsule covers them.
     Row(
       Modifier
         .align(Alignment.Center)
@@ -334,11 +318,55 @@ fun LiquidGlassDock(
         accent = accent,
         ink = ink,
         positionValue = positionValue,
-        interactive = true,
         applyFade = true,
-        onSelect = onSelect,
       )
     }
+
+    // 5. single gesture layer owning taps and horizontal drags.
+    Box(
+      Modifier
+        .fillMaxSize()
+        .pointerInput(tabs.size, tabWidthPx, tabInsetPx, selectedIndex, lastIndex) {
+          val slop = viewConfiguration.touchSlop
+          awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            down.consume()
+            val downX = down.position.x
+            var isDrag = false
+            var accumulated = 0f
+            var change = down
+            while (change.pressed) {
+              val event = awaitPointerEvent(PointerEventPass.Main)
+              change = event.changes.firstOrNull { it.id == down.id } ?: break
+              if (!change.pressed) break
+              val dx = change.position.x - change.previousPosition.x
+              accumulated += dx
+              if (!isDrag && abs(accumulated) > slop) {
+                isDrag = true
+                velocityTracker.resetTracking()
+                press()
+              }
+              if (isDrag) {
+                change.consume()
+                val next = (position.value + dx / tabWidthPx)
+                  .coerceIn(0f, lastIndex.toFloat())
+                scope.launch { position.snapTo(next) }
+                velocityTracker.addPosition(change.uptimeMillis, Offset(next, 0f))
+                trackVelocity()
+              }
+            }
+            if (isDrag) {
+              val target = position.value.roundToInt().coerceIn(0, lastIndex)
+              if (target != selectedIndex) onSelect(target) else glideTo(target.toFloat())
+            } else {
+              val index = floor((downX - tabInsetPx) / tabWidthPx)
+                .toInt()
+                .coerceIn(0, lastIndex)
+              onSelect(index)
+            }
+          }
+        },
+    )
   }
 }
 
@@ -349,15 +377,12 @@ private fun DockTabs(
   accent: Color,
   ink: Color,
   positionValue: Float,
-  interactive: Boolean,
   applyFade: Boolean,
-  onSelect: (Int) -> Unit,
 ) {
   Row(
     Modifier
       .fillMaxSize()
-      .padding(horizontal = TabInset)
-      .then(if (interactive) Modifier.selectableGroup() else Modifier),
+      .padding(horizontal = TabInset),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     tabs.forEachIndexed { index, tab ->
@@ -375,25 +400,13 @@ private fun DockTabs(
         modifier = Modifier
           .weight(1f)
           .fillMaxHeight()
-          .clip(CircleShape)
-          .alpha(fade)
-          .then(
-            if (interactive) {
-              Modifier.selectable(
-                selected = selected,
-                role = Role.Tab,
-                onClick = { onSelect(index) },
-              )
-            } else {
-              Modifier
-            },
-          ),
+          .alpha(fade),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
       ) {
         Icon(
           tab.icon,
-          contentDescription = if (interactive) tab.label else null,
+          contentDescription = null,
           tint = color,
           modifier = Modifier.size(22.dp),
         )
