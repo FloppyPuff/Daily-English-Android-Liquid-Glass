@@ -75,7 +75,7 @@ fun TodayScreen(
   val stats = ui.stats
   val day = SimpleDateFormat("M月d日 EEEE", Locale.CHINA).format(Date())
   LazyColumn(
-    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 132.dp),
+    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 100.dp),
     verticalArrangement = Arrangement.spacedBy(16.dp),
   ) {
     item {
@@ -237,7 +237,7 @@ fun PracticeScreen(
   }
   val stats = ui.stats
   LazyColumn(
-    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 132.dp),
+    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 100.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
   ) {
     item {
