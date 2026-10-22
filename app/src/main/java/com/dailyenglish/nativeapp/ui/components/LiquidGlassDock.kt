@@ -61,6 +61,7 @@ import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
@@ -70,22 +71,22 @@ data class LiquidTabItem(
 )
 
 private val BarHeight = 70.dp
-private val BubbleHeight = 84.dp
 private val TabInset = 4.dp
-private const val PressedScale = 1.16f
+private const val PressedScale = 1.12f
 
 /**
- * Floating liquid-glass dock modeled on Kyant0/AndroidLiquidGlass.
- *
- * Three stacked glass layers produce the lens instead of a flat frost:
+ * Floating liquid-glass dock built from three stacked glass layers:
  *  1. the visible bar samples the page layer with a light blur and a constant
  *     refraction, so page content warps at the capsule edge;
- *  2. a hidden, accent-tinted duplicate of the tab row is recorded into its own
- *     layer backdrop, giving the lens colorful content to magnify even on the
- *     app's white pages;
- *  3. the moving selection bubble samples both layers through a combined
- *     backdrop and drives its lens, highlight, shadows and squash from the
- *     press/drag progress, so it melts into a magnifier while sliding.
+ *  2. a hidden, accent-tinted twin of the tab row is recorded into its own
+ *     layer backdrop, giving the lens colorful content to magnify;
+ *  3. the moving selection capsule samples both layers through a combined
+ *     backdrop and drives its lens, highlight, shadows and velocity squash
+ *     from the press/drag progress, so it stays liquid while sliding.
+ *
+ * The interactive icon row sits above the capsule and cross-fades each slot
+ * out as the capsule covers it, which keeps a single crisp copy of every
+ * label (the capsule shows the tinted twin copy instead).
  */
 @Composable
 fun LiquidGlassDock(
@@ -160,7 +161,7 @@ fun LiquidGlassDock(
   BoxWithConstraints(
     modifier = modifier
       .fillMaxWidth()
-      .height(BubbleHeight),
+      .height(BarHeight),
     contentAlignment = Alignment.Center,
   ) {
     val density = LocalDensity.current
@@ -168,8 +169,9 @@ fun LiquidGlassDock(
     val tabWidth = (maxWidth - TabInset * 2) / tabs.size
     val tabWidthPx = with(density) { tabWidth.toPx() }
     val progress = pressProgress.value
+    val positionValue = position.value
 
-    // Soft white bloom that follows the bubble while it is pressed or dragged.
+    // Soft white bloom that follows the capsule while pressed or dragged.
     val glow = Modifier.drawWithContent {
       drawContent()
       val p = pressProgress.value
@@ -186,7 +188,8 @@ fun LiquidGlassDock(
       }
     }
 
-    Row(
+    // 1. visible glass bar.
+    Box(
       Modifier
         .align(Alignment.Center)
         .drawBackdrop(
@@ -207,14 +210,10 @@ fun LiquidGlassDock(
         .then(glow)
         .height(BarHeight)
         .fillMaxWidth(),
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      DockTabs(tabs, selectedIndex, accent, ink, interactive = true, onSelect = onSelect)
-    }
+    )
 
-    // Invisible twin of the tab row, tinted with the accent and recorded into
-    // its own layer so the selection lens has something liquid to magnify.
-    Row(
+    // 2. hidden accent-tinted twin recorded for the lens.
+    Box(
       Modifier
         .align(Alignment.Center)
         .clearAndSetSemantics { }
@@ -235,15 +234,24 @@ fun LiquidGlassDock(
         .height(BarHeight)
         .fillMaxWidth()
         .graphicsLayer { colorFilter = ColorFilter.tint(accent) },
-      verticalAlignment = Alignment.CenterVertically,
     ) {
-      DockTabs(tabs, selectedIndex, accent, ink, interactive = false, onSelect = {})
+      DockTabs(
+        tabs = tabs,
+        selectedIndex = selectedIndex,
+        accent = accent,
+        ink = ink,
+        positionValue = positionValue,
+        interactive = false,
+        applyFade = false,
+        onSelect = {},
+      )
     }
 
+    // 3. moving liquid lens capsule, exactly one tab wide and bar tall.
     Box(
       Modifier
         .align(Alignment.CenterStart)
-        .graphicsLayer { translationX = tabInsetPx + position.value * tabWidthPx }
+        .graphicsLayer { translationX = tabInsetPx + positionValue * tabWidthPx }
         .drawBackdrop(
           backdrop = combinedBackdrop,
           shape = { CircleShape },
@@ -255,7 +263,7 @@ fun LiquidGlassDock(
             )
           },
           highlight = { Highlight.Default.copy(alpha = progress) },
-          shadow = { Shadow.Default.copy(alpha = 0.6f * progress) },
+          shadow = { Shadow.Default.copy(alpha = progress * 0.6f) },
           innerShadow = { InnerShadow.Default.copy(radius = 8.dp * progress, alpha = progress) },
           layerBlock = {
             var sx = pressScaleX.value
@@ -274,14 +282,35 @@ fun LiquidGlassDock(
             drawRect(Color.Black.copy(alpha = 0.03f * progress))
           },
         )
-        .height(BubbleHeight)
+        .height(BarHeight)
         .width(tabWidth),
     )
 
+    // 4. interactive icon row above the capsule; slots fade out under it.
+    Row(
+      Modifier
+        .align(Alignment.Center)
+        .height(BarHeight)
+        .fillMaxWidth(),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      DockTabs(
+        tabs = tabs,
+        selectedIndex = selectedIndex,
+        accent = accent,
+        ink = ink,
+        positionValue = positionValue,
+        interactive = true,
+        applyFade = true,
+        onSelect = onSelect,
+      )
+    }
+
+    // 5. drag-to-switch overlay; taps fall through to the icon row.
     Box(
       Modifier
         .fillMaxSize()
-        .pointerInput(tabs.size, tabWidthPx) {
+        .pointerInput(tabs.size, tabWidthPx, selectedIndex) {
           detectHorizontalDragGestures(
             onDragStart = {
               velocityTracker.resetTracking()
@@ -314,7 +343,9 @@ private fun DockTabs(
   selectedIndex: Int,
   accent: Color,
   ink: Color,
+  positionValue: Float,
   interactive: Boolean,
+  applyFade: Boolean,
   onSelect: (Int) -> Unit,
 ) {
   Row(
@@ -327,11 +358,20 @@ private fun DockTabs(
     tabs.forEachIndexed { index, tab ->
       val selected = selectedIndex == index
       val color = if (selected) accent else ink
+      // Fade a slot out once the capsule covers it: the capsule then shows the
+      // tinted twin copy, so only one crisp label remains.
+      val fade =
+        if (applyFade) {
+          ((abs(positionValue - index) - 0.15f) / 0.35f).coerceIn(0f, 1f)
+        } else {
+          1f
+        }
       Column(
         modifier = Modifier
           .weight(1f)
           .fillMaxHeight()
           .clip(CircleShape)
+          .alpha(fade)
           .then(
             if (interactive) {
               Modifier.selectable(
