@@ -20,7 +20,6 @@ data class StatsUiState(
   val loading: Boolean = true,
   val error: String = "",
   val stats: Statistics? = null,
-  val statsExam: String = "all",
 )
 
 @HiltViewModel
@@ -51,13 +50,6 @@ class StatsViewModel @Inject constructor(
     }
   }
 
-  fun setStatsExam(exam: String) {
-    val next = exam.takeIf { it == "cet6" || it == "postgrad" } ?: "all"
-    if (_state.value.statsExam == next) return
-    _state.value = _state.value.copy(statsExam = next)
-    refresh()
-  }
-
   private suspend fun load() {
     runCatching {
       val content = contentRepository.load()
@@ -67,8 +59,7 @@ class StatsViewModel @Inject constructor(
       val state = progressRepository.state.value
       _state.value = StatsUiState(
         loading = false,
-        stats = LearningEngine.statistics(state, content.words, sentences = content.sentences, exam = _state.value.statsExam),
-        statsExam = _state.value.statsExam,
+        stats = LearningEngine.statistics(state, content.words, sentences = content.sentences),
       )
     }.onFailure {
       _state.update { it.copy(loading = false, error = "学习记录读取失败，请重试") }
@@ -81,7 +72,7 @@ class StatsViewModel @Inject constructor(
     _state.value = _state.value.copy(
       loading = false,
       error = "",
-      stats = LearningEngine.statistics(state, bank, sentences = sentences.orEmpty(), exam = _state.value.statsExam),
+      stats = LearningEngine.statistics(state, bank, sentences = sentences.orEmpty()),
     )
   }
 }

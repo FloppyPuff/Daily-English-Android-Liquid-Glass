@@ -38,7 +38,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dailyenglish.nativeapp.core.learning.HeatCell
 import com.dailyenglish.nativeapp.core.learning.Statistics
 import com.dailyenglish.nativeapp.core.learning.WeekSlice
-import com.dailyenglish.nativeapp.feature.study.StatsExamSwitch
 import com.dailyenglish.nativeapp.feature.study.StudyError
 import com.dailyenglish.nativeapp.feature.study.StudyLoading
 import com.dailyenglish.nativeapp.theme.NumberStyle
@@ -62,18 +61,21 @@ fun StatsScreen(
     return
   }
   Column(
-    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 124.dp),
+    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 132.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
   ) {
-    StatsExamSwitch(ui.statsExam, viewModel::setStatsExam)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+      Text("全部学习记录", style = MaterialTheme.typography.titleMedium)
+      Text(
+        "CET-6 与考研进度已合并统计",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
     StatGrid(stats)
     BoxWithConstraints {
       val twoPane = maxWidth >= 720.dp
-      val examLabel = when (ui.statsExam) {
-        "cet6" -> "CET-6"
-        "postgrad" -> "考研英语"
-        else -> "综合词库"
-      }
+      val examLabel = "综合词库"
       if (twoPane) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
           WeekPanel(stats.week, Modifier.weight(1f))

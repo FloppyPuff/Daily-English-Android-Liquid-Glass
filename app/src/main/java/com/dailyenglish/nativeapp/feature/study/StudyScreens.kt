@@ -31,13 +31,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -55,26 +52,9 @@ import com.dailyenglish.nativeapp.core.model.AppState
 import com.dailyenglish.nativeapp.data.content.WordDto
 import com.dailyenglish.nativeapp.theme.NumberStyle
 import com.dailyenglish.nativeapp.theme.glassBorderBrush
-import com.dailyenglish.nativeapp.ui.components.AppSegmentedButton
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-// The study queue is merged; the only place the two tracks remain a choice is
-// the statistics view, where they act as filters over the same history.
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun StatsExamSwitch(exam: String, onExam: (String) -> Unit, modifier: Modifier = Modifier) {
-  SingleChoiceSegmentedButtonRow(modifier) {
-    listOf("all" to "全部", "cet6" to "CET-6", "postgrad" to "考研英语").forEachIndexed { index, (value, label) ->
-      AppSegmentedButton(
-        selected = exam == value,
-        onClick = { onExam(value) },
-        shape = SegmentedButtonDefaults.itemShape(index, 3),
-      ) { Text(label) }
-    }
-  }
-}
 
 @Composable
 fun TodayScreen(
@@ -95,7 +75,7 @@ fun TodayScreen(
   val stats = ui.stats
   val day = SimpleDateFormat("M月d日 EEEE", Locale.CHINA).format(Date())
   LazyColumn(
-    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 124.dp),
+    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 132.dp),
     verticalArrangement = Arrangement.spacedBy(16.dp),
   ) {
     item {
@@ -257,7 +237,7 @@ fun PracticeScreen(
   }
   val stats = ui.stats
   LazyColumn(
-    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 124.dp),
+    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 132.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
   ) {
     item {
