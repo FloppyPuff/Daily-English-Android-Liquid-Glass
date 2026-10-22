@@ -62,7 +62,7 @@ fun StatsScreen(
     return
   }
   Column(
-    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp),
+    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 124.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
   ) {
     StatsExamSwitch(ui.statsExam, viewModel::setStatsExam)
@@ -120,7 +120,7 @@ private data class StatItem(val label: String, val value: String, val unit: Stri
 private fun StatCard(item: StatItem, modifier: Modifier) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = modifier,
@@ -128,7 +128,7 @@ private fun StatCard(item: StatItem, modifier: Modifier) {
     Column(Modifier.padding(16.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(3.dp)) {
       Text(item.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
       Row(verticalAlignment = Alignment.Bottom) {
-        Text(item.value, style = MaterialTheme.typography.headlineMedium.copy(fontFamily = FontFamily.Monospace))
+        Text(item.value, style = MaterialTheme.typography.headlineMedium)
         Text(" ${item.unit}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
       }
       Text(item.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -140,7 +140,7 @@ private fun StatCard(item: StatItem, modifier: Modifier) {
 private fun WeekPanel(week: List<WeekSlice>, modifier: Modifier) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = modifier,
@@ -181,7 +181,7 @@ private fun MasteryPanel(stats: Statistics, examLabel: String, modifier: Modifie
   val percent = if (stats.total == 0) 0 else (stats.learned * 100.0 / stats.total).roundToInt()
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = modifier,
@@ -192,7 +192,7 @@ private fun MasteryPanel(stats: Statistics, examLabel: String, modifier: Modifie
         Text(examLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
       }
       Row(verticalAlignment = Alignment.Bottom) {
-        Text("$percent", style = MaterialTheme.typography.displaySmall.copy(fontFamily = FontFamily.Monospace))
+        Text("$percent", style = MaterialTheme.typography.displaySmall)
         Text("%", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
       }
       LinearProgressIndicator(
@@ -212,7 +212,7 @@ private fun LegendRow(label: String, value: Int) {
     Box(Modifier.size(8.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = if (label == "较熟悉") 1f else 0.45f)))
     Spacer(Modifier.width(6.dp))
     Text(label, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-    Text("$value", style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace))
+    Text("$value", style = MaterialTheme.typography.bodySmall)
   }
 }
 
@@ -220,7 +220,7 @@ private fun LegendRow(label: String, value: Int) {
 private fun HeatmapPanel(heatmap: List<HeatCell>) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth(),

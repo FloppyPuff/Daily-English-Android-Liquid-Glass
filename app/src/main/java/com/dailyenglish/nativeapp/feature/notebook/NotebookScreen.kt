@@ -61,7 +61,7 @@ fun NotebookScreen(
     return
   }
   Column(
-    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp),
+    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 124.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
   ) {
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
@@ -135,7 +135,7 @@ private fun WordSection(
 ) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = modifier,
@@ -143,7 +143,7 @@ private fun WordSection(
     Column(Modifier.padding(18.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(4.dp)) {
       Row(verticalAlignment = Alignment.CenterVertically) {
         Text("单词", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-        Text("${words.size} 词", style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("${words.size} 词", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
       }
       if (words.isEmpty()) {
         Text(
@@ -199,7 +199,7 @@ private fun SentenceSection(
 ) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = modifier,
@@ -207,7 +207,7 @@ private fun SentenceSection(
     Column(Modifier.padding(18.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(4.dp)) {
       Row(verticalAlignment = Alignment.CenterVertically) {
         Text("句子", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-        Text("${sentences.size} 句", style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("${sentences.size} 句", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
       }
       if (sentences.isEmpty()) {
         Text(
@@ -259,7 +259,7 @@ private fun NotebookSentenceRow(item: NotebookSentence, onClick: () -> Unit) {
 private fun EmptyNotebook(tab: String) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth(),

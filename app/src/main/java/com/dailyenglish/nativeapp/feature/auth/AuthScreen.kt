@@ -57,17 +57,16 @@ fun AuthScreen(
     verticalArrangement = Arrangement.spacedBy(22.dp),
   ) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-      Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp)) {
-        Icon(
-          Icons.Outlined.MenuBook,
-          contentDescription = null,
-          tint = MaterialTheme.colorScheme.onPrimary,
-          modifier = Modifier.padding(12.dp),
-        )
+      Row(verticalAlignment = Alignment.Bottom) {
+        Text("D", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.onSurface)
+        Text(".", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
       }
-      Column {
-        Text("Daily English.", style = MaterialTheme.typography.headlineMedium)
-      }
+      Text("DAILY ENGLISH", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+      Text("A little,\nevery day.", style = MaterialTheme.typography.headlineLarge)
+      Text("登录以同步学习进度，或先在本机开始。", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 
     Card(
@@ -100,6 +99,7 @@ fun AuthScreen(
           placeholder = { Text("you@example.com") },
           singleLine = true,
           enabled = !state.busy,
+          shape = MaterialTheme.shapes.medium,
           modifier = Modifier.fillMaxWidth(),
         )
         OutlinedTextField(
@@ -114,12 +114,18 @@ fun AuthScreen(
           singleLine = true,
           visualTransformation = PasswordVisualTransformation(),
           enabled = !state.busy,
+          shape = MaterialTheme.shapes.medium,
           modifier = Modifier.fillMaxWidth(),
         )
         if (state.error.isNotBlank()) {
           Text(state.error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
-        Button(onClick = onSubmit, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
+        Button(
+          onClick = onSubmit,
+          enabled = !state.busy,
+          shape = CircleShape,
+          modifier = Modifier.fillMaxWidth().height(50.dp),
+        ) {
           if (state.busy) {
             CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
             Spacer(Modifier.size(8.dp))

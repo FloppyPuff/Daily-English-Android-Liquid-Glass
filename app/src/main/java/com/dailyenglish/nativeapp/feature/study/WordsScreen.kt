@@ -31,11 +31,13 @@ import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -162,7 +164,7 @@ fun WordsScreen(
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-          Text("${ui.wordQueue.size} 词 · 第 ${ui.wordIndex + 1} 词", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+          Text("${ui.wordQueue.size} 词 · 第 ${ui.wordIndex + 1} 词 · 左右滑动换词", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
           Spacer(Modifier.weight(1f))
           TextButton(onClick = onNewSession) { Text("换一组") }
           if (!ui.revealed) TextButton(onClick = onNext) { Text("跳过") }
@@ -252,8 +254,13 @@ private fun WordCard(
     Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
       Row(verticalAlignment = Alignment.CenterVertically) {
         if (tier.isNotBlank()) {
-          Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
-            Text(tier, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp))
+          Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+            Text(
+              tier,
+              style = MaterialTheme.typography.labelSmall,
+              color = MaterialTheme.colorScheme.primary,
+              modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+            )
           }
         }
         Spacer(Modifier.weight(1f))
@@ -297,7 +304,15 @@ private fun WordCard(
           if (spelling) {
             Text(word.meaning, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
           } else {
-            Button(onClick = onReveal, modifier = Modifier.fillMaxWidth()) { Text("显示释义") }
+            Button(
+              onClick = onReveal,
+              shape = CircleShape,
+              colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.onSurface,
+                contentColor = MaterialTheme.colorScheme.surface,
+              ),
+              modifier = Modifier.fillMaxWidth().height(50.dp),
+            ) { Text("显示释义") }
           }
         } else {
           Text(word.meaning, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
@@ -351,12 +366,34 @@ private fun WordCard(
 private fun RatingButtons(onRate: (String) -> Unit) {
   Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-      OutlinedButton(onClick = { onRate("again") }, modifier = Modifier.weight(1f)) { Text("忘记") }
-      OutlinedButton(onClick = { onRate("hard") }, modifier = Modifier.weight(1f)) { Text("模糊") }
+      OutlinedButton(
+        onClick = { onRate("again") },
+        shape = CircleShape,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.weight(1f).height(44.dp),
+      ) { Text("忘记") }
+      OutlinedButton(
+        onClick = { onRate("hard") },
+        shape = CircleShape,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.weight(1f).height(44.dp),
+      ) { Text("模糊") }
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-      FilledTonalButton(onClick = { onRate("good") }, modifier = Modifier.weight(1f)) { Text("记住") }
-      Button(onClick = { onRate("easy") }, modifier = Modifier.weight(1f)) { Text("熟悉") }
+      FilledTonalButton(
+        onClick = { onRate("good") },
+        shape = CircleShape,
+        modifier = Modifier.weight(1f).height(44.dp),
+      ) { Text("记住") }
+      Button(
+        onClick = { onRate("easy") },
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(
+          containerColor = MaterialTheme.colorScheme.onSurface,
+          contentColor = MaterialTheme.colorScheme.surface,
+        ),
+        modifier = Modifier.weight(1f).height(44.dp),
+      ) { Text("熟悉") }
     }
   }
 }
@@ -402,9 +439,21 @@ private fun LibraryView(
       modifier = Modifier.fillMaxWidth(),
     )
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      FilterChip(selected = filter == "all", onClick = { filter = "all"; page = 0 }, label = { Text("全部") })
-      FilterChip(selected = filter == "new", onClick = { filter = "new"; page = 0 }, label = { Text("未学习") })
-      FilterChip(selected = filter == "learned", onClick = { filter = "learned"; page = 0 }, label = { Text("已学习") })
+      listOf("all" to "全部", "new" to "未学习", "learned" to "已学习").forEach { (value, label) ->
+        FilterChip(
+          selected = filter == value,
+          onClick = { filter = value; page = 0 },
+          label = { Text(label) },
+          shape = CircleShape,
+          border = null,
+          colors = FilterChipDefaults.filterChipColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
+            selectedLabelColor = MaterialTheme.colorScheme.surface,
+          ),
+        )
+      }
     }
     Text("${words.size} 词", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {

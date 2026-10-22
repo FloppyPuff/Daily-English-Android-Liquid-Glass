@@ -7,6 +7,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -178,37 +180,38 @@ fun MainNavigation(
         if (wide) {
           Surface(
             shape = RoundedCornerShape(28.dp),
-            color = Color.Transparent,
-            shadowElevation = 3.dp,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            shadowElevation = 0.dp,
             modifier = Modifier.padding(10.dp),
           ) {
-            Box(
-              Modifier
-                .clip(RoundedCornerShape(28.dp))
-                .background(glassSurfaceColor())
-                .border(1.dp, glassBorderBrush(), RoundedCornerShape(28.dp)),
+            NavigationRail(
+              containerColor = Color.Transparent,
+              windowInsets = WindowInsets(0, 0, 0, 0),
             ) {
-              NavigationRail(
-                containerColor = Color.Transparent,
-                windowInsets = WindowInsets(0, 0, 0, 0),
-              ) {
-                Spacer(Modifier.height(8.dp))
-                topDestinations.forEach { destination ->
-                  NavigationRailItem(
-                    selected = isSelected(current, destination.key),
-                    onClick = {
-                      if (backStack.lastOrNull() != destination.key) {
-                        backStack.clear()
-                        backStack.add(destination.key)
-                      }
-                    },
-                    icon = { Icon(destination.icon, contentDescription = destination.label) },
-                    label = if (compactRail) null else {
-                      { Text(destination.label) }
-                    },
-                    alwaysShowLabel = false,
-                  )
-                }
+              Spacer(Modifier.height(8.dp))
+              topDestinations.forEach { destination ->
+                NavigationRailItem(
+                  selected = isSelected(current, destination.key),
+                  onClick = {
+                    if (backStack.lastOrNull() != destination.key) {
+                      backStack.clear()
+                      backStack.add(destination.key)
+                    }
+                  },
+                  icon = { Icon(destination.icon, contentDescription = destination.label) },
+                  label = if (compactRail) null else {
+                    { Text(destination.label) }
+                  },
+                  alwaysShowLabel = false,
+                  colors = NavigationRailItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.surface,
+                    selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                    indicatorColor = MaterialTheme.colorScheme.onSurface,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                  ),
+                )
               }
             }
           }
@@ -328,7 +331,7 @@ fun MainNavigation(
         },
             )
           }
-          if (!wide) {
+          if (!wide && isTopLevelTab(current)) {
             LiquidGlassDock(
               tabs = topDestinations.map { LiquidTabItem(it.label, it.icon) },
               selectedIndex = topDestinations.indexOfFirst { isSelected(current, it.key) },
@@ -384,6 +387,8 @@ private fun titleFor(key: NavKey?): String = when (key) {
 }
 
 private fun formatClock(seconds: Int): String = "%02d:%02d".format(seconds / 60, seconds % 60)
+
+private fun isTopLevelTab(key: NavKey?): Boolean = topDestinations.any { it.key == key }
 
 // NavDisplay exposes a scene key as the entry's contentKey, which for our
 // destinations is the key's toString(); resolve detail screens to their tab so

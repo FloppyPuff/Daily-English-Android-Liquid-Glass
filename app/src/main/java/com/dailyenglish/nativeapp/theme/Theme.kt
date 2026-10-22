@@ -12,6 +12,43 @@ import androidx.compose.ui.unit.dp
 
 val AccentBlue = Color(0xFF2F6BFF)
 
+/** The white baseline keeps one user-selectable accent; the neutral roles never change. */
+enum class AccentChoice(
+  val key: String,
+  val label: String,
+  val light: Color,
+  val lightContainer: Color,
+  val onLightContainer: Color,
+  val dark: Color,
+  val darkContainer: Color,
+  val onDarkContainer: Color,
+) {
+  Blue(
+    "blue", "蓝色",
+    Color(0xFF2F6BFF), Color(0xFFE8F0FF), Color(0xFF0B2A66),
+    Color(0xFF7AA2FF), Color(0xFF163A75), Color(0xFFD9E5FF),
+  ),
+  Green(
+    "green", "绿色",
+    Color(0xFF0F8A54), Color(0xFFE2F4EB), Color(0xFF073A24),
+    Color(0xFF67D7A4), Color(0xFF103B29), Color(0xFFC8F3DC),
+  ),
+  Graphite(
+    "graphite", "石墨",
+    Color(0xFF3A3D44), Color(0xFFEFF1F4), Color(0xFF111318),
+    Color(0xFFD5D9E0), Color(0xFF2B2F36), Color(0xFFF4F6F9),
+  ),
+  Amber(
+    "amber", "琥珀",
+    Color(0xFFB26A00), Color(0xFFFFF1DC), Color(0xFF4A2800),
+    Color(0xFFF4B860), Color(0xFF4A3210), Color(0xFFFFE3B8),
+  );
+
+  companion object {
+    fun fromKey(key: String?): AccentChoice = entries.firstOrNull { it.key == key } ?: Blue
+  }
+}
+
 private val LightColors = lightColorScheme(
   primary = AccentBlue,
   onPrimary = Color.White,
@@ -99,10 +136,19 @@ private val AppShapes = Shapes(
 @Composable
 fun DailyEnglishTheme(
   darkTheme: Boolean = isSystemInDarkTheme(),
+  accent: AccentChoice = AccentChoice.Blue,
   content: @Composable () -> Unit,
 ) {
+  val base = if (darkTheme) DarkColors else LightColors
+  val scheme = base.copy(
+    primary = if (darkTheme) accent.dark else accent.light,
+    onPrimary = if (darkTheme) Color(0xFF071018) else Color.White,
+    primaryContainer = if (darkTheme) accent.darkContainer else accent.lightContainer,
+    onPrimaryContainer = if (darkTheme) accent.onDarkContainer else accent.onLightContainer,
+    inversePrimary = if (darkTheme) accent.light else accent.dark,
+  )
   MaterialTheme(
-    colorScheme = if (darkTheme) DarkColors else LightColors,
+    colorScheme = scheme,
     typography = AppTypography,
     shapes = AppShapes,
     content = content,

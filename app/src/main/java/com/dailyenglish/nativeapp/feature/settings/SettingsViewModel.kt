@@ -29,7 +29,7 @@ data class SettingsUiState(
   val auth: AuthState = AuthState.Anonymous(guest = false),
   val busy: Boolean = false,
   val message: String = "",
-  val dynamicColor: Boolean = false,
+  val accent: String = "blue",
   val importing: Boolean = false,
   val pendingImport: AppState? = null,
   val pendingSummary: String = "",
@@ -66,8 +66,8 @@ class SettingsViewModel @Inject constructor(
       }
     }
     viewModelScope.launch {
-      preference.dynamicColor.collect { value ->
-        _state.update { it.copy(dynamicColor = value) }
+      preference.accent.collect { value ->
+        _state.update { it.copy(accent = value) }
       }
     }
   }
@@ -105,10 +105,10 @@ class SettingsViewModel @Inject constructor(
     }
   }
 
-  fun setDynamicColor(value: Boolean) {
+  fun setAccent(value: String) {
     viewModelScope.launch {
-      preference.setDynamicColor(value)
-      _state.update { it.copy(dynamicColor = value) }
+      preference.setAccent(value)
+      _state.update { it.copy(accent = value) }
     }
   }
 

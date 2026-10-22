@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -98,7 +99,7 @@ fun PapersScreen(
       Card(
         onClick = { onOpenPaper(set.id) },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.extraLarge,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier.fillMaxWidth(),
@@ -172,7 +173,7 @@ private fun GroupRow(group: PaperGroup, status: String, onClick: () -> Unit) {
   Card(
     onClick = onClick,
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth(),
@@ -233,7 +234,7 @@ fun PaperGroupScreen(
     item {
       Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.extraLarge,
         modifier = Modifier.fillMaxWidth(),
       ) {
         Text(
@@ -247,7 +248,7 @@ fun PaperGroupScreen(
       item {
         Card(
           colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-          shape = MaterialTheme.shapes.large,
+          shape = MaterialTheme.shapes.extraLarge,
           modifier = Modifier.fillMaxWidth(),
         ) {
           Text(
@@ -290,7 +291,7 @@ fun PaperGroupScreen(
         val answered = group.questions.count { (ui.answers[it.number.toString()] ?: "").isNotBlank() }
         Card(
           colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-          shape = MaterialTheme.shapes.large,
+          shape = MaterialTheme.shapes.extraLarge,
           border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
           elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
           modifier = Modifier.fillMaxWidth(),
@@ -302,7 +303,16 @@ fun PaperGroupScreen(
               OutlinedButton(onClick = onReset) { Text("重新作答") }
             } else {
               Text("已作答 $answered / ${group.questions.size} 题", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-              Button(onClick = onSubmit, enabled = answered == group.questions.size && !ui.submitting, modifier = Modifier.fillMaxWidth()) {
+              Button(
+                onClick = onSubmit,
+                enabled = answered == group.questions.size && !ui.submitting,
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                  containerColor = MaterialTheme.colorScheme.onSurface,
+                  contentColor = MaterialTheme.colorScheme.surface,
+                ),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+              ) {
                 Text(if (ui.submitting) "保存中…" else "提交答案")
               }
             }
@@ -317,7 +327,7 @@ fun PaperGroupScreen(
 private fun QuestionCard(question: PaperQuestionDto, picked: String, checked: Boolean, onPick: (String) -> Unit) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth(),
@@ -337,24 +347,34 @@ private fun QuestionCard(question: PaperQuestionDto, picked: String, checked: Bo
       question.options.forEach { (letter, text) ->
         val right = checked && letter == question.answer
         val wrongPick = checked && picked == letter && letter != question.answer
+        val selected = picked == letter
+        val container = when {
+          right -> MaterialTheme.colorScheme.primaryContainer
+          wrongPick -> MaterialTheme.colorScheme.errorContainer
+          selected -> MaterialTheme.colorScheme.onSurface
+          else -> MaterialTheme.colorScheme.surfaceVariant
+        }
+        val contentColor = when {
+          right -> MaterialTheme.colorScheme.onPrimaryContainer
+          wrongPick -> MaterialTheme.colorScheme.onErrorContainer
+          selected -> MaterialTheme.colorScheme.surface
+          else -> MaterialTheme.colorScheme.onSurface
+        }
         Card(
           onClick = { onPick(letter) },
-          colors = CardDefaults.cardColors(
-            containerColor = when {
-              right -> MaterialTheme.colorScheme.primaryContainer
-              wrongPick -> MaterialTheme.colorScheme.errorContainer
-              picked == letter -> MaterialTheme.colorScheme.primaryContainer
-              else -> MaterialTheme.colorScheme.surfaceVariant
-            },
-          ),
-          border = if (picked == letter || right) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
+          colors = CardDefaults.cardColors(containerColor = container),
+          border = when {
+            right -> BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+            selected -> BorderStroke(1.5.dp, MaterialTheme.colorScheme.onSurface)
+            else -> null
+          },
           shape = MaterialTheme.shapes.medium,
           modifier = Modifier.fillMaxWidth(),
         ) {
           Row(Modifier.padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(letter, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(letter, style = MaterialTheme.typography.labelLarge, color = contentColor)
             Spacer(Modifier.width(12.dp))
-            Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Text(text, style = MaterialTheme.typography.bodyMedium, color = contentColor, modifier = Modifier.weight(1f))
             if (right) Icon(Icons.Outlined.Check, contentDescription = "正确答案", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
           }
         }
@@ -375,7 +395,7 @@ private fun TranslationQuestion(
 ) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth(),
@@ -397,6 +417,7 @@ private fun TranslationQuestion(
         placeholder = { Text("输入译文") },
         minLines = 4,
         maxLines = 8,
+        shape = MaterialTheme.shapes.medium,
         modifier = Modifier.fillMaxWidth(),
       )
       if (checked) {
@@ -418,18 +439,41 @@ private fun TranslationFooter(
 ) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth(),
   ) {
     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
       if (!checked) {
-        Button(onClick = onCheck, modifier = Modifier.fillMaxWidth()) { Text("对照参考译文") }
+        Button(
+          onClick = onCheck,
+          shape = CircleShape,
+          colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.onSurface,
+            contentColor = MaterialTheme.colorScheme.surface,
+          ),
+          modifier = Modifier.fillMaxWidth().height(48.dp),
+        ) { Text("对照参考译文") }
       } else {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-          OutlinedButton(onClick = { onRate("review") }, enabled = !submitting, modifier = Modifier.weight(1f)) { Text("还需巩固") }
-          Button(onClick = { onRate("mastered") }, enabled = !submitting, modifier = Modifier.weight(1f)) { Text("已经理解") }
+          OutlinedButton(
+            onClick = { onRate("review") },
+            enabled = !submitting,
+            shape = CircleShape,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            modifier = Modifier.weight(1f).height(44.dp),
+          ) { Text("还需巩固") }
+          Button(
+            onClick = { onRate("mastered") },
+            enabled = !submitting,
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(
+              containerColor = MaterialTheme.colorScheme.onSurface,
+              contentColor = MaterialTheme.colorScheme.surface,
+            ),
+            modifier = Modifier.weight(1f).height(44.dp),
+          ) { Text("已经理解") }
         }
         TextButton(onClick = onCheck) { Text("收起参考译文") }
       }

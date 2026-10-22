@@ -257,9 +257,16 @@ fun PracticeScreen(
   }
   val stats = ui.stats
   LazyColumn(
-    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp),
+    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 124.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
   ) {
+    item {
+      Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("KEEP GOING", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+        Text("今天想练什么？", style = MaterialTheme.typography.headlineMedium)
+        Text("选一个模块，保持今天的节奏。", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+      }
+    }
     item {
       PracticeCard(
         title = "词汇练习",
@@ -295,23 +302,27 @@ private fun PracticeCard(title: String, caption: String, icon: ImageVector, onCl
   Card(
     onClick = onClick,
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    shape = MaterialTheme.shapes.large,
+    shape = MaterialTheme.shapes.extraLarge,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     modifier = Modifier.fillMaxWidth(),
   ) {
-    Row(Modifier.padding(20.dp).background(MaterialTheme.colorScheme.surface), verticalAlignment = Alignment.CenterVertically) {
-      Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(48.dp)) {
+    Row(Modifier.padding(22.dp), verticalAlignment = Alignment.CenterVertically) {
+      Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(52.dp)) {
         Box(contentAlignment = Alignment.Center) {
-          Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+          Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
       }
       Spacer(Modifier.width(16.dp))
-      Column(Modifier.weight(1f)) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(caption, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+      Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(title, style = MaterialTheme.typography.titleLarge)
+        Text(caption, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
       }
-      Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+      Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.size(32.dp)) {
+        Box(contentAlignment = Alignment.Center) {
+          Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(18.dp))
+        }
+      }
     }
   }
 }

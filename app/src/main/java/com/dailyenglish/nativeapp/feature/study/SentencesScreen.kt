@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -132,11 +133,20 @@ fun SentencesScreen(
             supportingText = { Text("自动保存") },
             minLines = 5,
             maxLines = 10,
+            shape = MaterialTheme.shapes.medium,
             modifier = Modifier.fillMaxWidth(),
           )
           Row(verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
-            Button(onClick = onReveal) {
+            Button(
+              onClick = onReveal,
+              shape = CircleShape,
+              colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.onSurface,
+                contentColor = MaterialTheme.colorScheme.surface,
+              ),
+              modifier = Modifier.height(44.dp),
+            ) {
               Text(if (ui.sentenceRevealed) "收起参考" else "查看参考")
             }
           }
@@ -162,8 +172,21 @@ fun SentencesScreen(
               }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-              OutlinedButton(onClick = { onRate("review") }, modifier = Modifier.weight(1f)) { Text("还需巩固") }
-              Button(onClick = { onRate("mastered") }, modifier = Modifier.weight(1f)) { Text("已经理解") }
+              OutlinedButton(
+                onClick = { onRate("review") },
+                shape = CircleShape,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier.weight(1f).height(44.dp),
+              ) { Text("还需巩固") }
+              Button(
+                onClick = { onRate("mastered") },
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                  containerColor = MaterialTheme.colorScheme.onSurface,
+                  contentColor = MaterialTheme.colorScheme.surface,
+                ),
+                modifier = Modifier.weight(1f).height(44.dp),
+              ) { Text("已经理解") }
             }
           }
           Row(verticalAlignment = Alignment.CenterVertically) {

@@ -3,13 +3,20 @@ package com.dailyenglish.nativeapp.feature.settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FileDownload
@@ -46,6 +53,7 @@ import com.dailyenglish.nativeapp.core.sync.BackupCodec
 import com.dailyenglish.nativeapp.data.repository.AuthState
 import com.dailyenglish.nativeapp.data.repository.SyncMode
 import com.dailyenglish.nativeapp.data.repository.SyncStatus
+import com.dailyenglish.nativeapp.theme.AccentChoice
 import com.dailyenglish.nativeapp.theme.glassBorderBrush
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -234,6 +242,50 @@ fun SettingsScreen(
             is AuthState.Anonymous -> {
               Text("登录后可跨设备同步；不登录则仅保存在本机。", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
               Button(onClick = onLoginRequested) { Text("登录或注册") }
+            }
+          }
+        }
+      }
+    }
+    item {
+      Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = MaterialTheme.shapes.large,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+          Text("强调色", style = MaterialTheme.typography.titleMedium)
+          Text(
+            "只改变按钮、进度和激活状态，黑白基底与玻璃质感保持不变。",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+          Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            AccentChoice.entries.forEach { accent ->
+              val selected = AccentChoice.fromKey(state.accent) == accent
+              Column(
+                modifier = Modifier.clickable { viewModel.setAccent(accent.key) }.padding(vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+              ) {
+                Box(
+                  Modifier
+                    .size(34.dp)
+                    .background(if (isSystemInDarkTheme()) accent.dark else accent.light, CircleShape)
+                    .border(
+                      width = if (selected) 2.dp else 1.dp,
+                      color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant,
+                      shape = CircleShape,
+                    ),
+                )
+                Text(
+                  accent.label,
+                  style = MaterialTheme.typography.labelSmall,
+                  color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              }
             }
           }
         }

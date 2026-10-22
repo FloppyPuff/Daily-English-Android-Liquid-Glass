@@ -22,7 +22,7 @@ data class AppUiState(
   val showAuth: Boolean = false,
   val auth: AuthState = AuthState.Anonymous(guest = false),
   val sync: SyncUiState = SyncUiState(),
-  val dynamicColor: Boolean = false,
+  val accent: String = "blue",
 )
 
 @HiltViewModel
@@ -40,15 +40,15 @@ class AppViewModel @Inject constructor(
     showAuth,
     auth.state,
     sync.uiState,
-    preference.dynamicColor,
-  ) { loading, requested, authState, syncState, dynamic ->
+    preference.accent,
+  ) { loading, requested, authState, syncState, accent ->
     val needsAuth = !loading && authState is AuthState.Anonymous && !authState.guest
     AppUiState(
       booting = loading,
       showAuth = requested || needsAuth,
       auth = authState,
       sync = syncState,
-      dynamicColor = dynamic,
+      accent = accent,
     )
   }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppUiState())
 

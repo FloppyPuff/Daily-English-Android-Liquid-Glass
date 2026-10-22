@@ -2,18 +2,16 @@ package com.dailyenglish.nativeapp.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -74,18 +72,15 @@ private fun SplashScreen() {
   Column(
     modifier = Modifier.fillMaxSize().statusBarsPadding().padding(32.dp),
     horizontalAlignment = Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterVertically),
+    verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
   ) {
-    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(64.dp)) {
-      Icon(
-        Icons.Outlined.MenuBook,
-        contentDescription = null,
-        tint = MaterialTheme.colorScheme.onPrimary,
-        modifier = Modifier.padding(16.dp),
-      )
+    Row(verticalAlignment = Alignment.Bottom) {
+      Text("D", style = MaterialTheme.typography.displayLarge, color = MaterialTheme.colorScheme.onSurface)
+      Text(".", style = MaterialTheme.typography.displayLarge, color = MaterialTheme.colorScheme.primary)
     }
-    Text("Daily English.", style = MaterialTheme.typography.headlineMedium)
-    Text("A LITTLE, EVERY DAY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text("DAILY ENGLISH", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Spacer(Modifier.height(10.dp))
     CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp)
+    Text("A LITTLE, EVERY DAY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
   }
 }

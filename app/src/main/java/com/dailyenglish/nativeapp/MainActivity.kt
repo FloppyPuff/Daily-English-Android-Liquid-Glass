@@ -4,7 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dailyenglish.nativeapp.theme.AccentChoice
 import com.dailyenglish.nativeapp.theme.DailyEnglishTheme
 import com.dailyenglish.nativeapp.ui.AppRoot
 import com.dailyenglish.nativeapp.ui.AppViewModel
@@ -17,7 +20,8 @@ class MainActivity : ComponentActivity() {
     enableEdgeToEdge()
     setContent {
       val appViewModel: AppViewModel = hiltViewModel()
-      DailyEnglishTheme {
+      val appState by appViewModel.uiState.collectAsStateWithLifecycle()
+      DailyEnglishTheme(accent = AccentChoice.fromKey(appState.accent)) {
         AppRoot(appViewModel = appViewModel)
       }
     }
