@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -72,6 +73,7 @@ data class LiquidTabItem(
 
 private val BarHeight = 70.dp
 private val TabInset = 4.dp
+private val BubbleCorner = 26.dp
 private const val PressedScale = 1.12f
 
 /**
@@ -247,14 +249,16 @@ fun LiquidGlassDock(
       )
     }
 
-    // 3. moving liquid lens capsule, exactly one tab wide and bar tall.
+    // 3. moving liquid lens capsule, exactly one tab wide and bar tall. The
+    // rounded-rect shape fills the whole button slot instead of degenerating
+    // into an inscribed circle.
     Box(
       Modifier
         .align(Alignment.CenterStart)
         .graphicsLayer { translationX = tabInsetPx + positionValue * tabWidthPx }
         .drawBackdrop(
           backdrop = combinedBackdrop,
-          shape = { CircleShape },
+          shape = { RoundedCornerShape(BubbleCorner) },
           effects = {
             lens(
               10.dp.toPx() * progress,
@@ -286,27 +290,8 @@ fun LiquidGlassDock(
         .width(tabWidth),
     )
 
-    // 4. interactive icon row above the capsule; slots fade out under it.
-    Row(
-      Modifier
-        .align(Alignment.Center)
-        .height(BarHeight)
-        .fillMaxWidth(),
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      DockTabs(
-        tabs = tabs,
-        selectedIndex = selectedIndex,
-        accent = accent,
-        ink = ink,
-        positionValue = positionValue,
-        interactive = true,
-        applyFade = true,
-        onSelect = onSelect,
-      )
-    }
-
-    // 5. drag-to-switch overlay; taps fall through to the icon row.
+    // 4. drag-to-switch layer. It sits below the icon row so taps reach the
+    // clickable tabs first, while unconsumed horizontal moves still drive it.
     Box(
       Modifier
         .fillMaxSize()
@@ -334,6 +319,26 @@ fun LiquidGlassDock(
           )
         },
     )
+
+    // 5. interactive icon row on top; slots fade out as the capsule covers them.
+    Row(
+      Modifier
+        .align(Alignment.Center)
+        .height(BarHeight)
+        .fillMaxWidth(),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      DockTabs(
+        tabs = tabs,
+        selectedIndex = selectedIndex,
+        accent = accent,
+        ink = ink,
+        positionValue = positionValue,
+        interactive = true,
+        applyFade = true,
+        onSelect = onSelect,
+      )
+    }
   }
 }
 
