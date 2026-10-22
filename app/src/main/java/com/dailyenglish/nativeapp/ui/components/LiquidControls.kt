@@ -37,6 +37,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
@@ -200,9 +203,8 @@ fun LiquidGlassCircleButton(
         }
         transformOrigin = TransformOrigin(ox, oy)
         val d = drag.value
-        val maxShift = 4.dp.toPx()
-        translationX = (d.x * 0.15f).coerceIn(-maxShift, maxShift)
-        translationY = (d.y * 0.15f).coerceIn(-maxShift, maxShift)
+        translationX = d.x * 0.05f
+        translationY = d.y * 0.05f
         val dxN = (d.x / boxSize.width.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
         val dyN = (d.y / boxSize.height.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
         scaleX = (1f + 0.06f * p) * (1f + abs(dxN) * 0.45f - abs(dyN) * 0.15f)
@@ -271,9 +273,8 @@ fun LiquidGlassPillButton(
         }
         transformOrigin = TransformOrigin(ox, oy)
         val d = drag.value
-        val maxShift = 4.dp.toPx()
-        translationX = (d.x * 0.15f).coerceIn(-maxShift, maxShift)
-        translationY = (d.y * 0.15f).coerceIn(-maxShift, maxShift)
+        translationX = d.x * 0.05f
+        translationY = d.y * 0.05f
         val dxN = (d.x / boxSize.width.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
         val dyN = (d.y / boxSize.height.coerceAtLeast(1)).coerceIn(-0.4f, 0.4f)
         scaleX = (1f + 0.05f * p) * (1f + abs(dxN) * 0.45f - abs(dyN) * 0.15f)
@@ -354,6 +355,26 @@ fun LiquidGlassSegmented(
     val p = press.value
     val barColor = dockContainerColor()
 
+    // Same white bloom the dock floats over its bar, following the chip.
+    val glow = Modifier.drawWithContent {
+      drawContent()
+      val current = press.value
+      if (current > 0.01f) {
+        val cx = insetPx + (position.value + 0.5f) * tabWidthPx
+        drawRect(
+          brush = Brush.radialGradient(
+            colors = listOf(
+              Color.White.copy(alpha = 0.22f * current),
+              Color.White.copy(alpha = 0f),
+            ),
+            center = Offset(cx, size.height / 2f),
+            radius = size.minDimension * 1.5f,
+          ),
+          blendMode = BlendMode.Plus,
+        )
+      }
+    }
+
     Box(
       Modifier
         .fillMaxSize()
@@ -373,7 +394,8 @@ fun LiquidGlassSegmented(
               onDrawSurface = { drawRect(barColor) },
             )
           },
-        ),
+        )
+        .then(glow),
     )
 
     Box(
