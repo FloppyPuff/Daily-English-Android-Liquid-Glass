@@ -36,7 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.dailyenglish.nativeapp.theme.glassBorderBrush
-import com.dailyenglish.nativeapp.ui.components.AppSegmentedButton
+import com.dailyenglish.nativeapp.ui.components.LiquidGlassSegmented
 
 @Composable
 fun AuthScreen(
@@ -79,18 +79,11 @@ fun AuthScreen(
       Column(Modifier.padding(22.dp).background(MaterialTheme.colorScheme.surface), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("登录或注册", style = MaterialTheme.typography.titleLarge)
 
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-          AppSegmentedButton(
-            selected = state.mode == AuthMode.REGISTER,
-            onClick = { onMode(AuthMode.REGISTER) },
-            shape = SegmentedButtonDefaults.itemShape(0, 2),
-          ) { Text("注册") }
-          AppSegmentedButton(
-            selected = state.mode == AuthMode.LOGIN,
-            onClick = { onMode(AuthMode.LOGIN) },
-            shape = SegmentedButtonDefaults.itemShape(1, 2),
-          ) { Text("登录") }
-        }
+        LiquidGlassSegmented(
+          options = listOf("register" to "注册", "login" to "登录"),
+          selectedKey = if (state.mode == AuthMode.REGISTER) "register" else "login",
+          onSelect = { onMode(if (it == "register") AuthMode.REGISTER else AuthMode.LOGIN) },
+        )
 
         OutlinedTextField(
           value = state.email,

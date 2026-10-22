@@ -56,7 +56,7 @@ import com.dailyenglish.nativeapp.data.content.PaperQuestionDto
 import com.dailyenglish.nativeapp.feature.study.StudyError
 import com.dailyenglish.nativeapp.feature.study.StudyLoading
 import com.dailyenglish.nativeapp.theme.NumberStyle
-import com.dailyenglish.nativeapp.ui.components.AppSegmentedButton
+import com.dailyenglish.nativeapp.ui.components.LiquidGlassSegmented
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,15 +83,11 @@ fun PapersScreen(
     verticalArrangement = Arrangement.spacedBy(12.dp),
   ) {
     item {
-      SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        exams.forEachIndexed { index, exam ->
-          AppSegmentedButton(
-            selected = filter == exam,
-            onClick = { filter = exam },
-            shape = SegmentedButtonDefaults.itemShape(index, exams.size),
-          ) { Text(if (exam == "all") "全部" else exam) }
-        }
-      }
+      LiquidGlassSegmented(
+        options = exams.map { it to if (it == "all") "全部" else it },
+        selectedKey = filter,
+        onSelect = { filter = it },
+      )
     }
     item { Text("${sets.size} 套试卷", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     items(sets, key = { it.id }) { set ->

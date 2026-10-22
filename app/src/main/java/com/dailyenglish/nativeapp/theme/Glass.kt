@@ -18,6 +18,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +31,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 
 @Composable
 fun QuietBackground(
@@ -41,14 +46,25 @@ fun QuietBackground(
   // the page itself stays white-dominant.
   val glowA = scheme.primary.copy(alpha = if (dark) 0.12f else 0.06f)
   val glowB = scheme.primary.copy(alpha = if (dark) 0.08f else 0.10f)
-  Box(
-    modifier = modifier
-      .fillMaxSize()
-      .background(scheme.background)
-      .glow(glowA, glowB),
-    content = content,
-  )
+  // The backdrop is recorded from the background only, never from app content,
+  // so glass controls can sample it without sampling themselves.
+  val backdrop = rememberLayerBackdrop()
+  Box(modifier = modifier.fillMaxSize()) {
+    Box(
+      Modifier
+        .fillMaxSize()
+        .layerBackdrop(backdrop)
+        .background(scheme.background)
+        .glow(glowA, glowB),
+    )
+    CompositionLocalProvider(LocalGlassBackdrop provides backdrop) {
+      Box(Modifier.fillMaxSize(), content = content)
+    }
+  }
 }
+
+/** Background layer sampled by liquid glass buttons and segmented controls. */
+val LocalGlassBackdrop = staticCompositionLocalOf<Backdrop?> { null }
 
 private fun Modifier.glow(top: Color, bottom: Color): Modifier = this.then(
   Modifier.drawBehind {

@@ -40,7 +40,7 @@ import com.dailyenglish.nativeapp.core.learning.NotebookWord
 import com.dailyenglish.nativeapp.feature.study.StudyError
 import com.dailyenglish.nativeapp.feature.study.StudyLoading
 import com.dailyenglish.nativeapp.theme.glassBorderBrush
-import com.dailyenglish.nativeapp.ui.components.AppSegmentedButton
+import com.dailyenglish.nativeapp.ui.components.LiquidGlassSegmented
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,15 +64,11 @@ fun NotebookScreen(
     modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 112.dp),
     verticalArrangement = Arrangement.spacedBy(14.dp),
   ) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-      listOf("saved" to "我的收藏", "mistakes" to "薄弱 & 错题").forEachIndexed { index, (key, label) ->
-        AppSegmentedButton(
-          selected = ui.tab == key,
-          onClick = { viewModel.setTab(key) },
-          shape = SegmentedButtonDefaults.itemShape(index, 2),
-        ) { Text(label) }
-      }
-    }
+    LiquidGlassSegmented(
+      options = listOf("saved" to "我的收藏", "mistakes" to "薄弱 & 错题"),
+      selectedKey = ui.tab,
+      onSelect = viewModel::setTab,
+    )
     OutlinedTextField(
       value = ui.query,
       onValueChange = viewModel::setQuery,

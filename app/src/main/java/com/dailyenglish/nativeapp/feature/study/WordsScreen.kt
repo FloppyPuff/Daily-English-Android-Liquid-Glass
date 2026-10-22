@@ -71,7 +71,7 @@ import com.dailyenglish.nativeapp.data.content.WordDto
 import com.dailyenglish.nativeapp.theme.NumberStyle
 import com.dailyenglish.nativeapp.theme.WordHeadwordStyle
 import com.dailyenglish.nativeapp.theme.glassBorderBrush
-import com.dailyenglish.nativeapp.ui.components.AppSegmentedButton
+import com.dailyenglish.nativeapp.ui.components.LiquidGlassSegmented
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,15 +104,11 @@ fun WordsScreen(
     else -> "new"
   }
   Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp)) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-      listOf("new" to "闪卡记忆", "spell" to "拼写自测", "library" to "词库浏览").forEachIndexed { index, (value, label) ->
-        AppSegmentedButton(
-          selected = selectedMode == value,
-          onClick = { onStartSession(value, null) },
-          shape = SegmentedButtonDefaults.itemShape(index, 3),
-        ) { Text(label) }
-      }
-    }
+    LiquidGlassSegmented(
+      options = listOf("new" to "闪卡记忆", "spell" to "拼写自测", "library" to "词库浏览"),
+      selectedKey = selectedMode,
+      onSelect = { onStartSession(it, null) },
+    )
     Spacer(Modifier.height(14.dp))
     when {
       selectedMode == "library" -> LibraryView(
@@ -438,23 +434,11 @@ private fun LibraryView(
       shape = RoundedCornerShape(999.dp),
       modifier = Modifier.fillMaxWidth(),
     )
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      listOf("all" to "全部", "new" to "未学习", "learned" to "已学习").forEach { (value, label) ->
-        FilterChip(
-          selected = filter == value,
-          onClick = { filter = value; page = 0 },
-          label = { Text(label) },
-          shape = CircleShape,
-          border = null,
-          colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-            selectedLabelColor = MaterialTheme.colorScheme.surface,
-          ),
-        )
-      }
-    }
+    LiquidGlassSegmented(
+      options = listOf("all" to "全部", "new" to "未学习", "learned" to "已学习"),
+      selectedKey = filter,
+      onSelect = { filter = it; page = 0 },
+    )
     Text("${words.size} 词", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
       items(rows, key = { it.id }) { word ->
