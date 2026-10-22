@@ -178,7 +178,7 @@ jobs:
             $0 == "## " v || $0 == "## [" v "]" { flag = 1; next }
             /^## / && flag { flag = 0 }
             flag { print }
-          ' CHANGELOG.md 2>/dev/null || true)
+          ' CHANGELOG.md 2>/dev/null | awk 'NF { keep = 1 } keep' || true)
           if [ -z "$(printf '%s' "$section" | tr -d '[:space:]')" ]; then
             summary=$(git tag -l --format='%(contents)' "$tag" 2>/dev/null | head -5 || true)
             section="### Changes
@@ -186,12 +186,18 @@ jobs:
           ${summary:-$GITHUB_SHA}"
           fi
           printf '%s\n\n---\n\n%s\n' "$section" "$meta" > "$RUNNER_TEMP/notes.md"
-          if gh release view "$tag" >/dev/null 2>&1; then
-            gh release edit "$tag" --notes-file "$RUNNER_TEMP/notes.md"
-            gh release upload "$tag" "out/$NAME" "out/$NAME.sha256" --clobber
+          if gh release view "$tag" --json tagName >/dev/null 2>&1; then
+            if ! gh release edit "$tag" --notes-file "$RUNNER_TEMP/notes.md" ||
+               ! gh release upload "$tag" "out/$NAME" "out/$NAME.sha256" --clobber; then
+              echo "::error::cannot update release $tag with the workflow token; check Settings > Actions > Workflow permissions"
+              exit 1
+            fi
           else
-            gh release create "$tag" "out/$NAME" "out/$NAME.sha256" \
+            if ! gh release create "$tag" "out/$NAME" "out/$NAME.sha256" \
               --target "$GITHUB_SHA" --title "Daily English Liquid Glass $VERSION" \
-              --notes-file "$RUNNER_TEMP/notes.md"
+              --notes-file "$RUNNER_TEMP/notes.md"; then
+              echo "::error::cannot create release $tag with the workflow token; check Settings > Actions > Workflow permissions"
+              exit 1
+            fi
           fi
           echo "== published to release $tag"
